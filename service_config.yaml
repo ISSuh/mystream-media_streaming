@@ -1,0 +1,11 @@
+server:
+  # server port
+  port: 33669
+
+hls:
+  segmentBasePath: "./temp"
+
+kafka:
+  bootstrapServer: localhost:9092
+  groupId: mystream-media-streaming
+
