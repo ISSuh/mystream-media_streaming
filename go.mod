@@ -3,6 +3,7 @@ module github.com/ISSuh/mystream-media_streaming
 go 1.20
 
 require (
+	github.com/confluentinc/confluent-kafka-go v1.9.2
 	github.com/gin-gonic/gin v1.9.1
 	github.com/grafov/m3u8 v0.12.0
 	gopkg.in/yaml.v2 v2.4.0
