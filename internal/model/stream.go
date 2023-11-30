@@ -22,9 +22,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package event
+package model
 
-type StreamListener interface {
-	OnActive(status *StreamStatus)
-	OnDeactive(status *StreamStatus)
+type Stream struct {
+	StreamId int
+	Active bool
+	Url string
+	ActiveAt string
+	DeactiveAt string
+	MasterPlaylist string
+	MediaPlaylist string
 }
+

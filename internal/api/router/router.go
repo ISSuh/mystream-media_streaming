@@ -22,9 +22,20 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package event
+package router
 
-type StreamListener interface {
-	OnActive(status *StreamStatus)
-	OnDeactive(status *StreamStatus)
+import (
+	"github.com/ISSuh/mystream-media_streaming/internal/api/controller"
+	"github.com/ISSuh/mystream-media_streaming/internal/service"
+	"github.com/gin-gonic/gin"
+)
+
+func Setup(service *service.StreamService) *gin.Engine {
+	g := gin.New()
+
+	c := controller.NewStraemController(service)
+	g.GET("/api/v1/playlist/:streamId/master/:streamPath", c.View)
+	g.GET("/api/v1/playlist/:streamId/media/:streamPath", c.Segment)
+
+	return g
 }

@@ -25,34 +25,116 @@ SOFTWARE.
 package event
 
 import (
+	"context"
+	"encoding/json"
+	"sync"
+
+	log "github.com/sirupsen/logrus"
+
 	"github.com/ISSuh/mystream-media_streaming/internal/configure"
-	"github.com/confluentinc/confluent-kafka-go/kafka"
+	"github.com/segmentio/kafka-go"
 )
 
-type Consumer struct {
-	configure *configure.KafkaConfigure
-	consumer  *kafka.Consumer
+type Consumers struct {
+	consumerFactory *ConsumerFactory
+
+	ctx                    context.Context
+	streamActiveConsumer   *kafka.Reader
+	streamDeactiveConsumer *kafka.Reader
+	litener                StreamListener
+
+	activeChan   chan kafka.Message
+	deactiveChan chan kafka.Message
+
+	running bool
+	wg      sync.WaitGroup
 }
 
-func NewConsumer(configure *configure.KafkaConfigure) *Consumer {
-	c, err := kafka.NewConsumer(
-		&kafka.ConfigMap{
-			"bootstrap.servers": configure.BootstrapServer,
-			"group.id":          configure.GroupId,
-			"auto.offset.reset": "earliest",
-		},
-	)
+func NewConsumers(configure *configure.KafkaConfigure, litener StreamListener) *Consumers {
+	consumerFactory := NewConsumerFactory(configure)
+
+	return &Consumers{
+		consumerFactory:        consumerFactory,
+		streamActiveConsumer:   consumerFactory.streamActiveConsumer(),
+		streamDeactiveConsumer: consumerFactory.streamDeactiveConsumer(),
+		litener:                litener,
+		activeChan:             make(chan kafka.Message),
+		deactiveChan:           make(chan kafka.Message),
+		running:                false,
+		wg:                     sync.WaitGroup{},
+	}
+}
+
+func (c *Consumers) RunBackground() {
+	c.running = true
+
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+
+		for c.running {
+			m, err := c.streamActiveConsumer.ReadMessage(c.ctx)
+			if err != nil {
+				continue
+			}
+
+			c.activeChan <- m
+		}
+	}()
+
+	c.wg.Add(1)
+	go func() {
+		defer c.wg.Done()
+
+		for c.running {
+			m, err := c.streamDeactiveConsumer.ReadMessage(c.ctx)
+			if err != nil {
+				continue
+			}
+
+			c.activeChan <- m
+		}
+	}()
+
+	go c.work()
+}
+
+func (c *Consumers) work() {
+	for c.running {
+		select {
+		case message := <-c.activeChan:
+			s, err := c.parseStreamStatus(message.Value)
+			if err != nil {
+				continue
+			}
+
+			c.litener.OnActive(s)
+		case message := <-c.deactiveChan:
+			s, err := c.parseStreamStatus(message.Value)
+			if err != nil {
+				continue
+			}
+
+			c.litener.OnDeactive(s)
+		}
+	}
+}
+
+func (c *Consumers) Close() {
+	c.running = false
+
+	c.streamActiveConsumer.Close()
+	c.streamDeactiveConsumer.Close()
+
+	c.wg.Wait()
+}
+
+func (c *Consumers) parseStreamStatus(event []byte) (*StreamStatus, error) {
+	status := &StreamStatus{}
+	err := json.Unmarshal(event, status)
 	if err != nil {
-		panic("can not create kafka consumer")
-		return nil
+		log.Error("[Consumers][parseStreamStatus] parse event error. ", err.Error())
+		return nil, err
 	}
-
-	return &Consumer{
-		configure: configure,
-		consumer:  c,
-	}
-}
-
-func (c *Consumer) Init() {
-	// streamActiveTopic := "stream-active"
+	return status, nil
 }

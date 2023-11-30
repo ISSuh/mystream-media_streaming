@@ -22,29 +22,40 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package app
+package memory
 
 import (
-	"github.com/ISSuh/mystream-media_streaming/internal/configure"
-	"github.com/ISSuh/mystream-media_streaming/internal/router"
-	"github.com/gin-gonic/gin"
+	"sync"
+
+	"github.com/ISSuh/mystream-media_streaming/internal/model"
 )
 
-type AppService struct {
-	configure *configure.Configure
-	engine    *gin.Engine
+type StreamStatusMemoryRepository struct {
+	engin map[int]model.Stream
+	mtx   sync.Mutex
 }
 
-func NewAppService(configure *configure.Configure) *AppService {
-	return &AppService{
-		configure: configure,
-		engine:    router.NewRouter(),
+func NewStreamStatusMemoryRepository() *StreamStatusMemoryRepository {
+	return &StreamStatusMemoryRepository{
+		engin: make(map[int]model.Stream),
 	}
 }
 
-func (a *AppService) Run() error {
-	if err := a.engine.Run(":" + a.configure.Server.Port); err != nil {
-		return err
-	}
-	return nil
+func (m *StreamStatusMemoryRepository) Find(streamId int) (model.Stream, bool) {
+	data, exist := m.engin[streamId]
+	return data, exist
+}
+
+func (m *StreamStatusMemoryRepository) Save(stream model.Stream) {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
+
+	m.engin[stream.StreamId] = stream
+}
+
+func (m *StreamStatusMemoryRepository) Delete(streamId int) {
+	m.mtx.Lock()
+	defer m.mtx.Unlock()
+
+	delete(m.engin, streamId)
 }

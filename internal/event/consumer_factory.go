@@ -22,34 +22,42 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package response
+package event
 
-type ApiError struct {
-	Message string `json:"message"`
-	Status  int    `json:"status"`
+import (
+	"github.com/ISSuh/mystream-media_streaming/internal/configure"
+	"github.com/segmentio/kafka-go"
+)
+
+const (
+	STREAM_ACTIVE_TOPIC   = "stream-active"
+	STREAM_DEACTIVE_TOPIC = "stream-deactive"
+)
+
+type ConsumerFactory struct {
+	configure *configure.KafkaConfigure
 }
 
-type ApiResponse struct {
-	Success bool     `json:"success"`
-	Result  string   `json:"result"`
-	Error   ApiError `json:"error"`
-}
-
-func NewApiResponse(success bool, result string, err ApiError) ApiResponse {
-	return ApiResponse{
-		Success: success,
-		Result:  result,
-		Error:   err,
+func NewConsumerFactory(configure *configure.KafkaConfigure) *ConsumerFactory {
+	return &ConsumerFactory{
+		configure: configure,
 	}
 }
 
-func Success(result string) ApiResponse {
-	return NewApiResponse(true, result, ApiError{})
+func (f *ConsumerFactory) streamActiveConsumer() *kafka.Reader {
+	reader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers: []string{f.configure.BootstrapServer},
+		GroupID: f.configure.GroupId,
+		Topic:   STREAM_ACTIVE_TOPIC,
+	})
+	return reader
 }
 
-func Error(httpStatus int, message string) ApiResponse {
-	return NewApiResponse(false, "", ApiError{
-		Message: message,
-		Status:  httpStatus,
+func (f *ConsumerFactory) streamDeactiveConsumer() *kafka.Reader {
+	reader := kafka.NewReader(kafka.ReaderConfig{
+		Brokers: []string{f.configure.BootstrapServer},
+		GroupID: f.configure.GroupId,
+		Topic:   STREAM_ACTIVE_TOPIC,
 	})
+	return reader
 }

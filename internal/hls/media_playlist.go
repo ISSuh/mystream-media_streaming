@@ -22,12 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package dto
+package hls
 
-type StreamStatus struct {
-	StreamId   int    `json:"streamId"`
-	Active     bool   `json:"active"`
-	Url        string `json:"url"`
-	ActiveAt   string `json:"streamActiveAt"`
-	DeactiveAt string `json:"streamDeactiveAt"`
+type MediaPlaylist struct {
 }

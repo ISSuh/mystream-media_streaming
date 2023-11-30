@@ -22,19 +22,34 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package router
+package response
 
-import (
-	"github.com/ISSuh/mystream-media_streaming/internal/router/hls"
-	"github.com/gin-gonic/gin"
-)
+type ApiError struct {
+	Message string `json:"message"`
+	Status  int    `json:"status"`
+}
 
-func NewRouter() *gin.Engine {
-	g := gin.New()
+type ApiResponse struct {
+	Success bool     `json:"success"`
+	Result  string   `json:"result"`
+	Error   ApiError `json:"error"`
+}
 
-	hlsRouter := hls.NewHlsRouter()
-	g.GET("/api/v1/view/:streamId/:streamPath", hlsRouter.View)
-	g.GET("/api/v1/segment/:baseDir/:sessionId/:time/:segment", hlsRouter.Segment)
+func NewApiResponse(success bool, result string, err ApiError) ApiResponse {
+	return ApiResponse{
+		Success: success,
+		Result:  result,
+		Error:   err,
+	}
+}
 
-	return g
+func Success(result string) ApiResponse {
+	return NewApiResponse(true, result, ApiError{})
+}
+
+func Error(httpStatus int, message string) ApiResponse {
+	return NewApiResponse(false, "", ApiError{
+		Message: message,
+		Status:  httpStatus,
+	})
 }

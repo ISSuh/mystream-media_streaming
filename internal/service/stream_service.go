@@ -22,33 +22,46 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package main
+package service
 
 import (
-	"log"
-	"os"
-
-	"github.com/ISSuh/mystream-media_streaming/internal/app"
 	"github.com/ISSuh/mystream-media_streaming/internal/configure"
+	"github.com/ISSuh/mystream-media_streaming/internal/event"
+	"github.com/ISSuh/mystream-media_streaming/internal/hls"
+	"github.com/ISSuh/mystream-media_streaming/internal/model"
+	"github.com/ISSuh/mystream-media_streaming/internal/repository"
+	"github.com/ISSuh/mystream-media_streaming/internal/repository/memory"
 )
 
-func main() {
-	args := os.Args[1:]
-	if len(args) < 1 {
-		log.Fatal("need configure file path.")
-		return
-	}
+type StreamService struct {
+	repository repository.StreamStatusRepository
+	generator  *hls.Generator
+}
 
-	configureFilePath := args[0]
-	configure, err := configure.LoadConfigure(configureFilePath)
-	if err != nil {
-		log.Fatal("configure parse error. ", err)
-		return
+func NewSteamManager(configure *configure.Configure) *StreamService {
+	sm := &StreamService{
+		repository: memory.NewStreamStatusMemoryRepository(),
+		generator:  hls.NewGenerator(),
 	}
+	return sm
+}
 
-	application := app.NewApplication(configure)
-	if err := application.Run(); err != nil {
-		log.Fatal("application run fail. ", err)
-	}
+func (sm *StreamService) OnActive(status *event.StreamStatus) {
 
+}
+
+func (sm *StreamService) OnDeactive(status *event.StreamStatus) {
+
+}
+
+func (sm *StreamService) FindStream(streamId int) (model.Stream, bool) {
+	return sm.repository.Find(streamId)
+}
+
+func (sm *StreamService) MakeMasterPlaylist(streamId int) (string, error) {
+	return "", nil
+}
+
+func (sm *StreamService) MakeMediaPlaylist(streamId int) (string, error) {
+	return "", nil
 }

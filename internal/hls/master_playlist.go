@@ -22,14 +22,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package dto
+package hls
 
-type StreamActive struct {
-	StreamKey string `json:"streamKey"`
-}
-
-func NewStreamActive(streamKey string) StreamActive {
-	return StreamActive{
-		StreamKey: streamKey,
-	}
+type MasterPlaylist struct {
 }

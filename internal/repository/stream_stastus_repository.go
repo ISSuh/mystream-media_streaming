@@ -22,9 +22,12 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package event
+package repository
 
-type StreamListener interface {
-	OnActive(status *StreamStatus)
-	OnDeactive(status *StreamStatus)
+import "github.com/ISSuh/mystream-media_streaming/internal/model"
+
+type StreamStatusRepository interface {
+	Find(streamId int) (model.Stream, bool)
+	Save(stream model.Stream)
+	Delete(streamId int)
 }

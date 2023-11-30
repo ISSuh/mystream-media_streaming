@@ -24,7 +24,10 @@ SOFTWARE.
 
 package event
 
-type StreamListener interface {
-	OnActive(status *StreamStatus)
-	OnDeactive(status *StreamStatus)
+type StreamStatus struct {
+	StreamId   int    `json:"streamId"`
+	Active     bool   `json:"active"`
+	Url        string `json:"url"`
+	ActiveAt   string `json:"streamActiveAt"`
+	DeactiveAt string `json:"streamDeactiveAt"`
 }

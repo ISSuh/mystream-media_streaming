@@ -22,35 +22,37 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package hls
+package controller
 
 import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
 
+	"github.com/ISSuh/mystream-media_streaming/internal/api/response"
 	"github.com/ISSuh/mystream-media_streaming/internal/hls"
-	"github.com/ISSuh/mystream-media_streaming/internal/router/response"
+	"github.com/ISSuh/mystream-media_streaming/internal/service"
 	"github.com/gin-gonic/gin"
 )
 
-type HlsRouter struct {
-	generator *hls.Generator
+type StraemController struct {
+	streamService *service.StreamService
 }
 
-func NewHlsRouter() *HlsRouter {
-	return &HlsRouter{
-		generator: hls.NewGenerator(),
+func NewStraemController(streamService *service.StreamService) *StraemController {
+	return &StraemController{
+		streamService: streamService,
 	}
 }
 
-func (c *HlsRouter) View(context *gin.Context) {
+func (c *StraemController) View(context *gin.Context) {
 	id := context.Param("streamId")
 	streamPath := context.Param("streamPath")
 
 	fmt.Println("[TEST][View] id : ", id, ", streamPath : ", streamPath)
 
-	playlist, err := c.generator.MakeMediaM3u8()
+	generator := hls.NewGenerator()
+	playlist, err := generator.MakeMediaM3u8()
 	if err != nil {
 		resp := response.Error(http.StatusInternalServerError, "generate playlist fail. "+err.Error())
 		context.JSON(http.StatusInternalServerError, resp)
@@ -60,7 +62,7 @@ func (c *HlsRouter) View(context *gin.Context) {
 	context.Data(http.StatusOK, "application/x-mpegURL", []byte(playlist))
 }
 
-func (c *HlsRouter) Segment(context *gin.Context) {
+func (c *StraemController) Segment(context *gin.Context) {
 	// id := context.Param("streamId")
 	baseDir := context.Param("baseDir")
 	sessionId := context.Param("sessionId")

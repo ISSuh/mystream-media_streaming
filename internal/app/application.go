@@ -22,9 +22,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package event
+package app
 
-type StreamListener interface {
-	OnActive(status *StreamStatus)
-	OnDeactive(status *StreamStatus)
+import (
+	"github.com/ISSuh/mystream-media_streaming/internal/api/router"
+	"github.com/ISSuh/mystream-media_streaming/internal/configure"
+	"github.com/ISSuh/mystream-media_streaming/internal/event"
+	"github.com/ISSuh/mystream-media_streaming/internal/service"
+	"github.com/gin-gonic/gin"
+)
+
+type MainApplication struct {
+	configure *configure.Configure
+	engine    *gin.Engine
+	consumer  *event.Consumers
+}
+
+func NewApplication(configure *configure.Configure) *MainApplication {
+	streamService := service.NewSteamManager(configure)
+	consumer := event.NewConsumers(&configure.Kafka, streamService)
+
+	return &MainApplication{
+		configure: configure,
+		engine:    router.Setup(streamService),
+		consumer:  consumer,
+	}
+}
+
+func (a *MainApplication) Run() error {
+	if err := a.engine.Run(":" + a.configure.Server.Port); err != nil {
+		return err
+	}
+	return nil
 }
