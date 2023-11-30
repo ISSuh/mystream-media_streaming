@@ -57,7 +57,7 @@ func (f *ConsumerFactory) streamDeactiveConsumer() *kafka.Reader {
 	reader := kafka.NewReader(kafka.ReaderConfig{
 		Brokers: []string{f.configure.BootstrapServer},
 		GroupID: f.configure.GroupId,
-		Topic:   STREAM_ACTIVE_TOPIC,
+		Topic:   STREAM_DEACTIVE_TOPIC,
 	})
 	return reader
 }

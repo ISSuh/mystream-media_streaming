@@ -26,8 +26,8 @@ package controller
 
 import (
 	"fmt"
-	"io/ioutil"
 	"net/http"
+	"os"
 
 	"github.com/ISSuh/mystream-media_streaming/internal/api/response"
 	"github.com/ISSuh/mystream-media_streaming/internal/hls"
@@ -72,7 +72,7 @@ func (c *StraemController) Segment(context *gin.Context) {
 	path := baseDir + "/" + sessionId + "/" + time + "/" + segmentName
 	fmt.Println("[TEST][Segment] path : ", path)
 
-	segment, err := ioutil.ReadFile(path)
+	segment, err := os.ReadFile(path)
 	if err != nil {
 		context.String(http.StatusNotFound, "")
 		return

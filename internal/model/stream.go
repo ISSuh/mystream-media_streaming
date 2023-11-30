@@ -25,12 +25,11 @@ SOFTWARE.
 package model
 
 type Stream struct {
-	StreamId int
-	Active bool
-	Url string
-	ActiveAt string
-	DeactiveAt string
+	StreamId       int
+	Active         bool
+	Url            string
+	ActiveAt       string
+	DeactiveAt     string
 	MasterPlaylist string
-	MediaPlaylist string
+	MediaPlaylist  string
 }
-

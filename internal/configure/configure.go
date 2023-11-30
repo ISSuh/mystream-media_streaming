@@ -26,7 +26,7 @@ package configure
 
 import (
 	"errors"
-	"io/ioutil"
+	"os"
 
 	"gopkg.in/yaml.v2"
 )
@@ -47,7 +47,7 @@ type Configure struct {
 
 func LoadConfigure(filePath string) (*Configure, error) {
 	if len(filePath) <= 0 {
-		return nil, errors.New("Invalid option file path")
+		return nil, errors.New("invalid option file path")
 	}
 
 	var buffer []byte
@@ -65,7 +65,7 @@ func LoadConfigure(filePath string) (*Configure, error) {
 }
 
 func loadFile(path string) ([]byte, error) {
-	buf, err := ioutil.ReadFile(path)
+	buf, err := os.ReadFile(path)
 	if err != nil {
 		return nil, err
 	}

@@ -25,6 +25,11 @@ SOFTWARE.
 package service
 
 import (
+	"errors"
+	"strconv"
+
+	log "github.com/sirupsen/logrus"
+
 	"github.com/ISSuh/mystream-media_streaming/internal/configure"
 	"github.com/ISSuh/mystream-media_streaming/internal/event"
 	"github.com/ISSuh/mystream-media_streaming/internal/hls"
@@ -35,33 +40,84 @@ import (
 
 type StreamService struct {
 	repository repository.StreamStatusRepository
-	generator  *hls.Generator
+	generator  *hls.PlaylistGenerator
 }
 
 func NewSteamManager(configure *configure.Configure) *StreamService {
 	sm := &StreamService{
 		repository: memory.NewStreamStatusMemoryRepository(),
-		generator:  hls.NewGenerator(),
+		generator:  hls.NewPlaylistGenerator(),
 	}
 	return sm
 }
 
 func (sm *StreamService) OnActive(status *event.StreamStatus) {
+	log.Info("[StreamService][OnActive] status : ", status)
+	if !status.Active {
+		log.Warn("[StreamService][OnActive] invalid stream status.")
+		return
+	}
 
+	finded, exist := sm.repository.Find(status.StreamId)
+	if exist && finded.Active {
+		log.Warn("[StreamService][OnActive] stream already activated. ", finded)
+		return
+	}
+
+	stream := sm.convertToStream(*status)
+	sm.repository.Save(stream)
 }
 
 func (sm *StreamService) OnDeactive(status *event.StreamStatus) {
+	log.Info("[StreamService][OnDeactive] status : ", status)
+	if status.Active {
+		log.Warn("[StreamService][OnActive] invalid stream status.")
+		return
+	}
 
+	finded, exist := sm.repository.Find(status.StreamId)
+	if exist && !finded.Active {
+		log.Warn("[StreamService][OnActive] stream already deactivated. ", finded)
+		return
+	}
+
+	sm.repository.Delete(status.StreamId)
 }
 
-func (sm *StreamService) FindStream(streamId int) (model.Stream, bool) {
-	return sm.repository.Find(streamId)
-}
+func (sm *StreamService) FindMasterPlaylist(streamId int) (string, error) {
+	stream, exist := sm.repository.Find(streamId)
+	if !exist {
+		return "", errors.New("[StreamService][FindMasterPlaylist] not found stream. " + strconv.Itoa(streamId))
+	}
 
-func (sm *StreamService) MakeMasterPlaylist(streamId int) (string, error) {
+	if !stream.Active {
+		return "", errors.New("[StreamService][FindMasterPlaylist] stream is not activated. " + strconv.Itoa(streamId))
+	}
+
 	return "", nil
 }
 
-func (sm *StreamService) MakeMediaPlaylist(streamId int) (string, error) {
+func (sm *StreamService) FindMediaPlaylist(streamId int) (string, error) {
+	stream, exist := sm.repository.Find(streamId)
+	if !exist {
+		return "", errors.New("[StreamService][FindMediaPlaylist] not found stream. " + strconv.Itoa(streamId))
+	}
+
+	if !stream.Active {
+		return "", errors.New("[StreamService][FindMediaPlaylist] stream is not activated. " + strconv.Itoa(streamId))
+	}
+
 	return "", nil
+}
+
+func (sm *StreamService) convertToStream(status event.StreamStatus) model.Stream {
+	return model.Stream{
+		StreamId:       status.StreamId,
+		Active:         status.Active,
+		Url:            status.Url,
+		ActiveAt:       status.ActiveAt,
+		DeactiveAt:     status.DeactiveAt,
+		MasterPlaylist: "",
+		MediaPlaylist:  "",
+	}
 }

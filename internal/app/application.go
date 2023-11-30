@@ -35,21 +35,23 @@ import (
 type MainApplication struct {
 	configure *configure.Configure
 	engine    *gin.Engine
-	consumer  *event.Consumers
+	consumers *event.Consumers
 }
 
 func NewApplication(configure *configure.Configure) *MainApplication {
 	streamService := service.NewSteamManager(configure)
-	consumer := event.NewConsumers(&configure.Kafka, streamService)
+	consumers := event.NewConsumers(&configure.Kafka, streamService)
 
 	return &MainApplication{
 		configure: configure,
 		engine:    router.Setup(streamService),
-		consumer:  consumer,
+		consumers: consumers,
 	}
 }
 
 func (a *MainApplication) Run() error {
+	a.consumers.RunBackground()
+
 	if err := a.engine.Run(":" + a.configure.Server.Port); err != nil {
 		return err
 	}
