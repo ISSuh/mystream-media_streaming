@@ -22,44 +22,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package event
+package hls
 
-import (
-	"github.com/ISSuh/mystream-media_streaming/internal/configure"
-	"github.com/segmentio/kafka-go"
-)
-
-const (
-	STREAM_ACTIVE_TOPIC   = "stream-active"
-	STREAM_DEACTIVE_TOPIC = "stream-deactive"
-)
-
-type ConsumerFactory struct {
-	configure *configure.KafkaConfigure
-}
-
-func NewConsumerFactory(configure *configure.KafkaConfigure) *ConsumerFactory {
-	return &ConsumerFactory{
-		configure: configure,
-	}
-}
-
-func (f *ConsumerFactory) streamActiveConsumer() *kafka.Reader {
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:   []string{f.configure.BootstrapServer},
-		GroupID:   f.configure.GroupId,
-		Topic:     STREAM_ACTIVE_TOPIC,
-		Partition: 0,
-	})
-	return reader
-}
-
-func (f *ConsumerFactory) streamDeactiveConsumer() *kafka.Reader {
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:   []string{f.configure.BootstrapServer},
-		GroupID:   f.configure.GroupId,
-		Topic:     STREAM_DEACTIVE_TOPIC,
-		Partition: 0,
-	})
-	return reader
+type SegmentsReader interface {
+	SegmentsList(uri string, offset int, limit int) ([]string, error)
+	ReadSegment(uri, segmentName string) ([]byte, error)
 }

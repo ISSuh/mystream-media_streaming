@@ -22,44 +22,48 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package event
+package file
 
 import (
-	"github.com/ISSuh/mystream-media_streaming/internal/configure"
-	"github.com/segmentio/kafka-go"
+	"os"
+
+	log "github.com/sirupsen/logrus"
 )
 
-const (
-	STREAM_ACTIVE_TOPIC   = "stream-active"
-	STREAM_DEACTIVE_TOPIC = "stream-deactive"
-)
-
-type ConsumerFactory struct {
-	configure *configure.KafkaConfigure
+type SegmentsReaderOnFile struct {
 }
 
-func NewConsumerFactory(configure *configure.KafkaConfigure) *ConsumerFactory {
-	return &ConsumerFactory{
-		configure: configure,
+func NewSegmentsReaderOnFile() *SegmentsReaderOnFile {
+	return &SegmentsReaderOnFile{}
+}
+
+func (s *SegmentsReaderOnFile) SegmentsList(uri string, offset int, limit int) ([]string, error) {
+	result := make([]string, 0)
+
+	files, err := os.ReadDir(uri)
+	if err != nil {
+		log.Error("[SegmentsReaderOnFile][SegmentsList] can not open dir. ", err.Error())
+		return nil, err
 	}
+
+	filesLen := len(files)
+	if filesLen > limit {
+		files = files[filesLen-limit:]
+	}
+
+	for _, file := range files {
+		result = append(result, file.Name())
+	}
+
+	return result, err
 }
 
-func (f *ConsumerFactory) streamActiveConsumer() *kafka.Reader {
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:   []string{f.configure.BootstrapServer},
-		GroupID:   f.configure.GroupId,
-		Topic:     STREAM_ACTIVE_TOPIC,
-		Partition: 0,
-	})
-	return reader
-}
-
-func (f *ConsumerFactory) streamDeactiveConsumer() *kafka.Reader {
-	reader := kafka.NewReader(kafka.ReaderConfig{
-		Brokers:   []string{f.configure.BootstrapServer},
-		GroupID:   f.configure.GroupId,
-		Topic:     STREAM_DEACTIVE_TOPIC,
-		Partition: 0,
-	})
-	return reader
+func (s *SegmentsReaderOnFile) ReadSegment(uri, segmentName string) ([]byte, error) {
+	path := uri + "/" + segmentName
+	segment, err := os.ReadFile(path)
+	if err != nil {
+		log.Info("[SegmentsReaderOnFile][SegmentsList] can not open segment. ", err.Error())
+		return nil, err
+	}
+	return segment, nil
 }

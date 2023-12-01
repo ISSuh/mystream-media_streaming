@@ -25,12 +25,12 @@ SOFTWARE.
 package controller
 
 import (
-	"fmt"
 	"net/http"
-	"os"
+	"strconv"
+
+	log "github.com/sirupsen/logrus"
 
 	"github.com/ISSuh/mystream-media_streaming/internal/api/response"
-	"github.com/ISSuh/mystream-media_streaming/internal/hls"
 	"github.com/ISSuh/mystream-media_streaming/internal/service"
 	"github.com/gin-gonic/gin"
 )
@@ -45,16 +45,53 @@ func NewStraemController(streamService *service.StreamService) *StraemController
 	}
 }
 
-func (c *StraemController) View(context *gin.Context) {
-	id := context.Param("streamId")
+func (c *StraemController) Test(context *gin.Context) {
+	log.Info("[StraemController][Test]")
+	context.Status(http.StatusOK)
+}
+
+func (c *StraemController) MasterPlaylistOptions(context *gin.Context) {
+	context.Status(http.StatusOK)
+}
+
+func (c *StraemController) MasterPlaylist(context *gin.Context) {
 	streamPath := context.Param("streamPath")
-
-	fmt.Println("[TEST][View] id : ", id, ", streamPath : ", streamPath)
-
-	generator := hls.NewGenerator()
-	playlist, err := generator.MakeMediaM3u8()
+	streamId, err := strconv.Atoi(context.Param("streamId"))
 	if err != nil {
-		resp := response.Error(http.StatusInternalServerError, "generate playlist fail. "+err.Error())
+		resp := response.Error(http.StatusBadRequest, "invalid streamId. "+err.Error())
+		context.JSON(http.StatusInternalServerError, resp)
+		return
+	}
+
+	log.Info("[StraemController][MasterPlaylist] id : ", streamId, ", streamPath : ", streamPath)
+
+	playlist, err := c.streamService.FindMasterPlaylist(streamId, streamPath)
+	if err != nil {
+		resp := response.Error(http.StatusBadRequest, "generate playlist fail. "+err.Error())
+		context.JSON(http.StatusInternalServerError, resp)
+		return
+	}
+
+	context.Data(http.StatusOK, "application/x-mpegURL", []byte(playlist))
+}
+
+func (c *StraemController) MediaPlaylistOptions(context *gin.Context) {
+	context.Status(http.StatusOK)
+}
+
+func (c *StraemController) MediaPlaylist(context *gin.Context) {
+	streamPath := context.Param("streamPath")
+	streamId, err := strconv.Atoi(context.Param("streamId"))
+	if err != nil {
+		resp := response.Error(http.StatusBadRequest, "invalid streamId. "+err.Error())
+		context.JSON(http.StatusInternalServerError, resp)
+		return
+	}
+
+	log.Info("[StraemController][MediaPlaylist] id : ", streamId, ", streamPath : ", streamPath)
+	playlist, err := c.streamService.FindMediaPlaylist(streamId, streamPath)
+	if err != nil {
+		resp := response.Error(http.StatusBadRequest, "generate playlist fail. "+err.Error())
 		context.JSON(http.StatusInternalServerError, resp)
 		return
 	}
@@ -63,18 +100,20 @@ func (c *StraemController) View(context *gin.Context) {
 }
 
 func (c *StraemController) Segment(context *gin.Context) {
-	// id := context.Param("streamId")
-	baseDir := context.Param("baseDir")
-	sessionId := context.Param("sessionId")
-	time := context.Param("time")
+	streamPath := context.Param("streamPath")
 	segmentName := context.Param("segment")
-
-	path := baseDir + "/" + sessionId + "/" + time + "/" + segmentName
-	fmt.Println("[TEST][Segment] path : ", path)
-
-	segment, err := os.ReadFile(path)
+	streamId, err := strconv.Atoi(context.Param("streamId"))
 	if err != nil {
-		context.String(http.StatusNotFound, "")
+		resp := response.Error(http.StatusBadRequest, "invalid streamId. "+err.Error())
+		context.JSON(http.StatusInternalServerError, resp)
+		return
+	}
+
+	log.Info("[StraemController][Segment] id : ", streamId, ", streamPath : ", streamPath, ", segmentName : ", segmentName)
+	segment, err := c.streamService.FindSegment(streamId, streamPath, segmentName)
+	if err != nil {
+		resp := response.Error(http.StatusNotFound, "not found segment. "+err.Error())
+		context.JSON(http.StatusInternalServerError, resp)
 		return
 	}
 

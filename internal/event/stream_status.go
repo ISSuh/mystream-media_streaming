@@ -27,7 +27,7 @@ package event
 type StreamStatus struct {
 	StreamId   int    `json:"id"`
 	Active     bool   `json:"active"`
-	Url        string `json:"url"`
+	Uri        string `json:"url"`
 	ActiveAt   string `json:"streamActiveAt"`
 	DeactiveAt string `json:"streamDeactiveAt"`
 }

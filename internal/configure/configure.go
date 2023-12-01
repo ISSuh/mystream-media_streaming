@@ -40,9 +40,18 @@ type ServerConfigure struct {
 	Port string `yaml:"port"`
 }
 
+type SegmentConfigure struct {
+	BasePath string `yaml:"basePath"`
+}
+
+type HlsConfigure struct {
+}
+
 type Configure struct {
-	Server ServerConfigure `yaml:"server"`
-	Kafka  KafkaConfigure  `yaml:"kafka"`
+	Server  ServerConfigure  `yaml:"server"`
+	Kafka   KafkaConfigure   `yaml:"kafka"`
+	Segment SegmentConfigure `yaml:"segment"`
+	Hls     HlsConfigure     `yaml:"hls"`
 }
 
 func LoadConfigure(filePath string) (*Configure, error) {

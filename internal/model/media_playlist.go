@@ -16,38 +16,19 @@ copies or substantial portions of the Software.
 THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHE
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-package router
+package model
 
-import (
-	"github.com/gin-contrib/cors"
-	"github.com/gin-gonic/gin"
+import "time"
 
-	"github.com/ISSuh/mystream-media_streaming/internal/api/controller"
-	"github.com/ISSuh/mystream-media_streaming/internal/service"
-)
-
-func Setup(service *service.StreamService) *gin.Engine {
-	g := gin.New()
-	g.Use(cors.New(cors.Config{
-		AllowOrigins:  []string{"*"},
-		AllowMethods:  []string{"GET"},
-		ExposeHeaders: []string{"Content-Length"},
-	}))
-
-	c := controller.NewStraemController(service)
-
-	v1 := g.Group("/api/v1/playlist")
-	v1.GET("/test", c.Test)
-	v1.GET("/master/:streamId/:streamPath", c.MasterPlaylist)
-	v1.OPTIONS("/master/:streamId/:streamPath", c.MasterPlaylistOptions)
-	v1.GET("/media/:streamId/:streamPath", c.MediaPlaylist)
-	v1.OPTIONS("/media/:streamId/:streamPath", c.MediaPlaylistOptions)
-	v1.GET("/media/:streamId/:streamPath/:segment", c.Segment)
-	return g
+type MediaPlaylist struct {
+	Sequence   uint64
+	Uri        string
+	Playlist   string
+	UpdateTime time.Time
 }

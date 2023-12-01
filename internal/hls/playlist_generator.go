@@ -25,60 +25,55 @@ SOFTWARE.
 package hls
 
 import (
-	"fmt"
-	"os"
-
 	"github.com/ISSuh/mystream-media_streaming/internal/model"
 	"github.com/grafov/m3u8"
 )
 
 type PlaylistGenerator struct {
+	reader SegmentsReader
 }
 
-func NewPlaylistGenerator() *PlaylistGenerator {
-	return &PlaylistGenerator{}
+func NewPlaylistGenerator(reader SegmentsReader) *PlaylistGenerator {
+	return &PlaylistGenerator{
+		reader: reader,
+	}
 }
 
-func (g *PlaylistGenerator) MakeMediaM3u8(stream *model.Stream) (string, error) {
-
-	playlist, err := m3u8.NewMediaPlaylist(8, 10)
-	if err != nil {
-		return "", err
-	}
-
-	prefix := "/api/v1/segment/"
-	testBasePath := "temp/7157824134036780522/20231128162134"
-	files, err := os.ReadDir(testBasePath)
-	if err != nil {
-		return "", err
-	}
-
-	var duration float64 = 2.0
-	for _, file := range files {
-		fmt.Println("[TEST] file : ", file.Name())
-
-		path := prefix + testBasePath + "/" + file.Name()
-		if err := playlist.Append(path, duration, "title!!"); err != nil {
-			fmt.Println("[TEST] playlist append error. ", err)
-		}
-	}
-
-	return playlist.String(), nil
-}
-
-func (g *PlaylistGenerator) makeMasterPlaylist(stream *model.Stream) (string, error) {
+func (g *PlaylistGenerator) MakeMasterPlaylist(stream *model.Stream) (string, error) {
 	master := m3u8.NewMasterPlaylist()
 	master.SetVersion(3)
 
 	master.Append(
-		"chunklist1.m3u8", nil,
+		stream.MediaPlaylist.Uri,
+		nil,
 		m3u8.VariantParams{
-			ProgramId: 123, Resolution: "1280x720", FrameRate: 30.000})
+			ProgramId: 50, Resolution: "1280x720", FrameRate: 30.000, Video: "720p30"})
 
-	return "", nil
+	return master.String(), nil
 }
 
-func (g *PlaylistGenerator) makeMediaPlaylist(stream *model.Stream) (string, error) {
-	// media := m3u8.NewMasterPlaylist()
-	return "", nil
+func (g *PlaylistGenerator) MakeMediaPlaylist(stream *model.Stream, streamPath string) (string, error) {
+	totalSegment := 10
+
+	list, err := g.reader.SegmentsList(streamPath, 0, totalSegment)
+	if err != nil {
+		return "", err
+	}
+
+	itemLen := len(list)
+	playlist, err := m3u8.NewMediaPlaylist(uint(itemLen), uint(totalSegment))
+	if err != nil {
+		return "", err
+	}
+
+	playlist.SeqNo = stream.MediaPlaylist.Sequence
+
+	var duration float64 = 2
+	title := "live"
+	for i := 0; i < itemLen; i++ {
+		path := stream.MediaPlaylist.Uri + "/" + list[i]
+		playlist.Append(path, duration, title)
+	}
+
+	return playlist.String(), nil
 }

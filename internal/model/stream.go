@@ -27,9 +27,9 @@ package model
 type Stream struct {
 	StreamId       int
 	Active         bool
-	Url            string
+	Uri            string
 	ActiveAt       string
 	DeactiveAt     string
-	MasterPlaylist string
-	MediaPlaylist  string
+	MediaPlaylist  MediaPlaylist
+	MasterPlaylist MasterPlaylist
 }

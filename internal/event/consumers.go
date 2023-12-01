@@ -94,7 +94,7 @@ func (c *Consumers) RunBackground() {
 				continue
 			}
 
-			c.activeChan <- m
+			c.deactiveChan <- m
 		}
 	}()
 
